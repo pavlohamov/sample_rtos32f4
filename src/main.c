@@ -12,10 +12,15 @@
 #include "task.h"
 #include <stdio.h>
 
-static void busy_wait(volatile int ms) {
-    while (ms--) {
-        volatile int cnt = 0x7FF;
-        while (cnt--);
+
+static void routine (void *arg) {
+    int led = (int)arg;
+    const int del = 200 + 300 * (led - GPIO_LED_BLUE);
+    int val = 0;
+    while (1) {
+        BSP_GPIO_set(led, val);
+        val = !val;
+        vTaskDelay(del/2);
     }
 }
 
@@ -23,12 +28,11 @@ int main() {
 
     BSP_Init();
     printf("starting\r\n");
-    while (1) {
-        BSP_GPIO_set(GPIO_LED_BLUE, 0);
-        busy_wait(1000);
-        BSP_GPIO_set(GPIO_LED_BLUE, 1);
-        busy_wait(1000);
-    }
+
+//    xTaskCreate(routine, "", configMINIMAL_STACK_SIZE, (void*)GPIO_LED_BLUE, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(routine, "", configMINIMAL_STACK_SIZE, (void*)GPIO_LED_1, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(routine, "", configMINIMAL_STACK_SIZE, (void*)GPIO_LED_2, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(routine, "", configMINIMAL_STACK_SIZE, (void*)GPIO_LED_3, tskIDLE_PRIORITY, NULL);
 
     vTaskStartScheduler();
     return 0;
