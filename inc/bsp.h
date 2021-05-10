@@ -32,6 +32,8 @@ int BSP_GPIO_get(int pin);
 
 int BSP_trace(const void *data, size_t size);
 
+void *BSP_getUartHandle(void);
+
 #ifdef __cplusplus
 }
 #endif

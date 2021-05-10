@@ -14,7 +14,7 @@
 
 #include "stm32f4xx_hal_cortex.h"
 #include "stm32f4xx_hal_dma.h"
-#include "stm32f4xx_hal_usart.h"
+#include "stm32f4xx_hal_uart.h"
 
 #include <errno.h>
 
@@ -31,6 +31,8 @@ typedef struct {
 } GpioCfg_t;
 
 int BSP_Init(void) {
+
+    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
     initRcc();
     initGpio();
     initUsart1();
@@ -79,27 +81,32 @@ static void initGpio(void) {
 
 }
 
-static USART_HandleTypeDef s_tracerHandle;
+static UART_HandleTypeDef s_tracerHandle;
 static void initUsart1(void) {
     __HAL_RCC_USART1_CLK_ENABLE();
-    static const USART_InitTypeDef ifaceParams = {
+    static const UART_InitTypeDef ifaceParams = {
             115200,
-            USART_WORDLENGTH_8B,
-            USART_STOPBITS_1,
-            USART_PARITY_NONE,
-            USART_MODE_TX_RX,
-            0,0,0
+            UART_WORDLENGTH_8B,
+            UART_STOPBITS_1,
+            UART_PARITY_NONE,
+            UART_MODE_TX_RX,
+            0,0,
     };
     s_tracerHandle.Instance = USART1;
     s_tracerHandle.Init = ifaceParams;
-    HAL_USART_Init(&s_tracerHandle);
-
+    HAL_UART_Init(&s_tracerHandle);
+    HAL_NVIC_SetPriority(USART1_IRQn, 0x0F, 0);
     HAL_NVIC_EnableIRQ(USART1_IRQn);
 }
 
 int BSP_trace(const void *data, size_t size) {
-    int rv = HAL_USART_Transmit(&s_tracerHandle, (void*)data, size, 0xFFFF);
+    int rv = HAL_UART_Transmit(&s_tracerHandle, (void*)data, size, 0xFFFF);
     if (rv)
         return -EIO;
     return size;
+}
+
+
+void *BSP_getUartHandle(void) {
+    return &s_tracerHandle;
 }
